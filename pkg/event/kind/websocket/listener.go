@@ -72,13 +72,21 @@ func (l *WebsocketListener) Notify(event testkube.Event) (result testkube.EventR
 		err := w.SendJSON(event)
 		if err != nil {
 			failed = append(failed, w.Id)
+			_ = w.Close()
 		} else {
 			success = append(success, w.Id)
 		}
 	}
 
+	for _, id := range failed {
+		l.RemoveWebsocket(id)
+	}
+
 	if len(failed) > 0 {
-		return testkube.NewFailedEventResult(event.Id, errors.New("message sent to not all clients, failed: "+strings.Join(failed, ", ")))
+		if len(success) > 0 {
+			return testkube.NewSuccessEventResult(event.Id, "message sent to websocket clients (with some disconnects)")
+		}
+		return testkube.NewFailedEventResult(event.Id, errors.New("message not sent, failed: "+strings.Join(failed, ", ")))
 	} else if len(success) > 0 {
 		return testkube.NewSuccessEventResult(event.Id, "message sent to websocket clients")
 	} else {

@@ -21,3 +21,9 @@ func (w *Websocket) SendJSON(v any) error {
 	defer w.mu.Unlock()
 	return w.Conn.WriteJSON(v)
 }
+
+func (w *Websocket) Close() error {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return w.Conn.Close()
+}
